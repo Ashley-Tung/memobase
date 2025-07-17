@@ -62,9 +62,11 @@ def main():
         from src.memzero.add import MemoryADD
         from src.memzero.search import MemorySearch
 
+        dataset = "dataset/test.json"
+        # dataset = "dataset/locomo10.json"
         if args.method == "add":
             memory_manager = MemoryADD(
-                data_path="dataset/locomo10.json", is_graph=args.is_graph
+                data_path=dataset, is_graph=args.is_graph
             )
             memory_manager.process_all_conversations()
         elif args.method == "search":
@@ -75,7 +77,7 @@ def main():
             memory_searcher = MemorySearch(
                 output_file_path, args.top_k, args.filter_memories, args.is_graph
             )
-            memory_searcher.process_data_file("dataset/locomo10.json")
+            memory_searcher.process_data_file(dataset)
     elif args.technique_type == "rag":
         from src.rag import RAGManager
 
@@ -117,13 +119,15 @@ def main():
         openai_manager.process_data_file("dataset/locomo10.json", output_file_path)
     elif args.technique_type == "memobase":
         from src.memobase_client import MemobaseADD, MemobaseSearch
+        dataset = "dataset/test.json"
+        # dataset = "dataset/locomo10.json"
 
         if args.method == "add":
-            memobase_manager = MemobaseADD(data_path="dataset/locomo10.json")
+            memobase_manager = MemobaseADD(data_path=dataset)
             memobase_manager.process_all_conversations()
         elif args.method == "search":
             memobase_manager = MemobaseSearch()
-            memobase_manager.process_data_file("dataset/locomo10.json")
+            memobase_manager.process_data_file(dataset)
     else:
         raise ValueError(f"Invalid technique type: {args.technique_type}")
 

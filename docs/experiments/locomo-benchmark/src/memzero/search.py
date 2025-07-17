@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+MODEL="gpt-4.1-mini"
 
 class MemorySearch:
 
@@ -27,6 +28,11 @@ class MemorySearch:
         self.output_path = output_path
         self.filter_memories = filter_memories
         self.is_graph = is_graph
+
+        # Create output directory if it doesn't exist
+        output_dir = os.path.dirname(self.output_path)
+        if output_dir and not os.path.exists(output_dir):
+            os.makedirs(output_dir)
 
         if self.is_graph:
             self.ANSWER_PROMPT = ANSWER_PROMPT_GRAPH
@@ -89,7 +95,8 @@ class MemorySearch:
 
         t1 = time.time()
         response = self.openai_client.chat.completions.create(
-            model=os.getenv("MODEL"),
+            # model=os.getenv("MODEL"),
+            model=MODEL,
             messages=[
                 {"role": "system", "content": answer_prompt}
             ],

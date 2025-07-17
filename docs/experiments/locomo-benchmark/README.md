@@ -9,23 +9,22 @@ This project contains the code of running benchmark results on [Locomo dataset](
 - zep
 - basic rag
 - naive LLM
-- Memobase
+- Memobase (version [0.0.32-beta1](https://github.com/orgs/memodb-io/packages/container/memobase/408325731?tag=0.0.32-beta1) or later)
 
 ## Result
 
-- We ran Memobase results and pasted the other methods' result from [Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory](https://arxiv.org/pdf/2504.19413). 
+We ran Memobase results and pasted the other methods' result from [Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory](https://arxiv.org/pdf/2504.19413). 
 
-- We mainly report the LLM Judge Sorce (higher is better).
+We mainly report the LLM Judge Sorce (higher is better).
 
-| Method                 | Single-Hop(%) | Multi-Hop(%) | Open Domain(%) | Temporal(%) | Overall(%) |
-| ---------------------- | ------------- | ------------ | -------------- | ----------- | ---------- |
-| Mem0                   | **67.13**     | 51.15        | 72.93          | 55.51       | 66.88      |
-| Mem0-Graph             | 65.71         | 47.19        | 75.71          | 58.13       | 68.44      |
-| LangMem                | 62.23         | 47.92        | 71.12          | 23.43       | 58.10      |
-| Zep                    | 61.70         | 41.35        | 76.60      | 49.31       | 65.99      |
-| OpenAI                 | 63.79         | 42.92        | 62.29          | 21.71       | 52.90      |
-| Memobase(*v0.0.32*) | 63.83         | **52.08**    | 71.82          | 80.37   | 70.91  |
-| Memobase(*v0.0.37*) | **70.92** | 46.88 | **77.17**   | **85.05** | **75.78** |
+| Method     | Single-Hop(%) | Multi-Hop(%) | Open Domain(%) | Temporal(%) | Overall(%) |
+| ---------- | ------------- | ------------ | -------------- | ----------- | ---------- |
+| Mem0       | **67.13**     | 51.15        | 72.93          | 55.51       | 66.88      |
+| Mem0-Graph | 65.71         | 47.19        | 75.71          | 58.13       | 68.44      |
+| LangMem    | 62.23         | 47.92        | 71.12          | 23.43       | 58.10      |
+| Zep        | 61.70         | 41.35        | **76.60**      | 49.31       | 65.99      |
+| OpenAI     | 63.79         | 42.92        | 62.29          | 21.71       | 52.90      |
+| Memobase   | 63.83         | **52.08**    | 71.82          | **80.37**   | **70.91**  |
 
 > **What is LLM Judge Score?**
 >
@@ -33,43 +32,33 @@ This project contains the code of running benchmark results on [Locomo dataset](
 
 We attached the artifacts of Memobase under `fixture/memobase/`:
 
-- v0.0.32
-  - `fixture/memobase/results_0503_3000.json`: predicted answers from Memobase Memory
-  - `fixture/memobase/memobase_eval_0503_3000.json`: LLM Judge results of predicted answers
+- `fixture/memobase/results_0503_3000.json`: predicted answers from Memobase Memory
+- `fixture/memobase/memobase_eval_0503_3000.json`: LLM Judge results of predicted answers
 
-- v0.0.37
-  - `fixture/memobase/results_0710_3000.json`: predicted answers from Memobase Memory
-  - `fixture/memobase/memobase_eval_0710_3000.json`: LLM Judge results of predicted answers
-
-To generate the latest scorings, run:
+To generate the scorings, run:
 
 ```bash
-python generate_scores.py --input_path="fixture/memobase/memobase_eval_0710_3000.json"
+python generate_scores.py --input_path="fixture/memobase/memobase_eval_0503_3000.json"
 ```
 
 Output:
 
 ```
-Mean Scores Per Category:
           bleu_score  f1_score  llm_score  count         type
 category
-1             0.3516    0.4629     0.7092    282   single_hop
-2             0.4758    0.6423     0.8505    321     temporal
-3             0.1758    0.2293     0.4688     96    multi_hop
-4             0.4089    0.5155     0.7717    841  open_domain
+1             0.3045    0.4283     0.6383    282   single_hop
+2             0.4582    0.6438     0.8037    321     temporal
+3             0.2078    0.3085     0.5208     96    multi_hop
+4             0.3429    0.4698     0.7182    841  open_domain
 
 Overall Mean Scores:
-bleu_score    0.3978
-f1_score      0.5145
-llm_score     0.7578
+bleu_score    0.3515
+f1_score      0.4884
+llm_score     0.7091
 dtype: float64
 ```
 
 
-> ❕ We update the results from Zep team (Zep*). See this [issue](https://github.com/memodb-io/memobase/issues/101) for detail reports and artifacts.
-> | Method     | Single-Hop(%) | Multi-Hop(%) | Open Domain(%) | Temporal(%) | Overall(%) |
-> | ---------- | ------------- | ------------ | -------------- | ----------- | ---------- |
-> | Zep*       | 74.11         | 66.04        | 67.71          | 79.79       | 75.14      |
 
 
 

@@ -52,14 +52,43 @@ ANSWER_PROMPT = """
 
 
 class OpenAIPredict:
-    def __init__(self, model="gpt-4o-mini"):
+    def __init__(self, model="gpt-4.1-mini"):
         self.model = model
         self.openai_client = OpenAI()
         self.results = defaultdict(list)
+        self.memories_dir = "memories"
+        os.makedirs(self.memories_dir, exist_ok=True)
+
+    def create_memory_files(self, data_path):
+        """Create memory files from the dataset."""
+        with open(data_path, 'r') as f:
+            data = json.load(f)
+        
+        for idx, item in enumerate(data):
+            conversation = item['conversation']
+            memory_content = []
+            
+            for key in conversation.keys():
+                if key in ['speaker_a', 'speaker_b'] or "date" in key:
+                    continue
+                
+                date_time_key = key + "_date_time"
+                timestamp = conversation[date_time_key]
+                chats = conversation[key]
+                
+                for chat in chats:
+                    memory_content.append(f"{timestamp}: {chat['speaker']}: {chat['text']}")
+            
+            # Write memories to file
+            with open(os.path.join(self.memories_dir, f"{idx}.txt"), 'w') as f:
+                f.write("\n".join(memory_content))
 
     def search_memory(self, idx):
-
-        with open(f'memories/{idx}.txt', 'r') as file:
+        memory_file = os.path.join(self.memories_dir, f"{idx}.txt")
+        if not os.path.exists(memory_file):
+            raise FileNotFoundError(f"Memory file {memory_file} not found. Did you run create_memory_files() first?")
+            
+        with open(memory_file, 'r') as file:
             memories = file.read()
 
         return memories, 0
@@ -101,7 +130,7 @@ class OpenAIPredict:
 
         t1 = time.time()
         response = self.openai_client.chat.completions.create(
-            model=os.getenv("MODEL"),
+            model=self.model,
             messages=[
                 {"role": "system", "content": answer_prompt}
             ],
@@ -112,6 +141,14 @@ class OpenAIPredict:
         return response.choices[0].message.content, search_memory_time, response_time, memories
 
     def process_data_file(self, file_path, output_file_path):
+        # Create output directory if it doesn't exist
+        output_dir = os.path.dirname(output_file_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            
+        # Create memory files first
+        self.create_memory_files(file_path)
+        
         with open(file_path, 'r') as f:
             data = json.load(f)
 

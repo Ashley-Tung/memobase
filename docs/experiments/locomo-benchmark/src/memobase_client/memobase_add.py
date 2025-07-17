@@ -2,7 +2,9 @@ import uuid
 import json
 import time
 import os
+import sys
 import threading
+from datetime import datetime
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
@@ -16,6 +18,15 @@ config_path = os.path.join(root_dir, "config.yaml")
 
 def string_to_uuid(s: str, salt="memobase_client") -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, s + salt))
+
+
+class UUIDEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, uuid.UUID):
+            return str(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
 
 
 class MemobaseADD:
@@ -45,7 +56,7 @@ class MemobaseADD:
     def add_memory(self, user, message, retries=3):
         for attempt in range(retries):
             try:
-                _ = user.insert(ChatBlob(messages=message), sync=True)
+                _ = user.insert(ChatBlob(messages=message))
                 return
             except Exception as e:
                 if attempt < retries - 1:
@@ -58,9 +69,22 @@ class MemobaseADD:
         real_uid = string_to_uuid(speaker)
         u = self.client.get_or_create_user(real_uid)
         for i in tqdm(range(0, len(messages), self.batch_size), desc=desc):
+            # IMPORTANT: default batch size is 2 so this is
+            # Two lines of ocnversations, likely from two different users
+            # the two messages are added as a single ChatBlob object
             batch_messages = messages[i : i + self.batch_size]
             self.add_memory(u, batch_messages)
-        u.flush(sync=True)
+        u.flush()
+        
+        # Save profile after all memories are processed
+        os.makedirs("memobase_memories", exist_ok=True)
+        try:
+            profile_data = u.profile(need_json=True)
+            with open(f"memobase_memories/{u.user_id}.json", "w") as f:
+                json.dump(profile_data, f, indent=2, cls=UUIDEncoder)
+            print(f"Profile saved for user {u.user_id}")
+        except Exception as e:
+            print(f"Failed to save profile for user {u.user_id}: {e}")
 
     def process_conversation(self, item, idx):
         conversation = item["conversation"]
@@ -97,23 +121,23 @@ class MemobaseADD:
                             "created_at": timestamp,
                         }
                     )
-                    messages_reverse.append(
-                        {
-                            "role": "assistant",
-                            "content": chat["text"],
-                            "alias": speaker_a,
-                            "created_at": timestamp,
-                        }
-                    )
+                    # messages_reverse.append(
+                    #     {
+                    #         "role": "assistant",
+                    #         "content": chat["text"],
+                    #         "alias": speaker_a,
+                    #         "created_at": timestamp,
+                    #     }
+                    # )
                 elif chat["speaker"] == speaker_b:
-                    messages.append(
-                        {
-                            "role": "assistant",
-                            "content": chat["text"],
-                            "alias": speaker_b,
-                            "created_at": timestamp,
-                        }
-                    )
+                    # messages.append(
+                    #     {
+                    #         "role": "assistant",
+                    #         "content": chat["text"],
+                    #         "alias": speaker_b,
+                    #         "created_at": timestamp,
+                    #     }
+                    # )
                     messages_reverse.append(
                         {
                             "role": "user",
@@ -125,13 +149,25 @@ class MemobaseADD:
                 else:
                     raise ValueError(f"Unknown speaker: {chat['speaker']}")
 
+            # #### TODO: SAVE MESSAGES TO JSON FILES ####
+            # output_dir = os.path.join(os.path.dirname(self.data_path), "processed_messages")
+            # os.makedirs(output_dir, exist_ok=True)
+            
+            # messages_file = os.path.join(output_dir, f"messages_{idx}_{key}.json")
+            # messages_reverse_file = os.path.join(output_dir, f"messages_reverse_{idx}_{key}.json")
+            
+            # with open(messages_file, 'w') as f:
+            #     json.dump(messages, f, indent=2)
+            # with open(messages_reverse_file, 'w') as f:
+            #     json.dump(messages_reverse, f, indent=2)
+
             # add memories for the two users on different threads
             thread_a = threading.Thread(
                 target=self.add_memories_for_speaker,
                 args=(
                     speaker_a_user_id,
                     messages,
-                    f"{idx} Adding Memories for {speaker_a}",
+                    "Adding Memories for Speaker A",
                 ),
             )
             thread_b = threading.Thread(
@@ -139,7 +175,7 @@ class MemobaseADD:
                 args=(
                     speaker_b_user_id,
                     messages_reverse,
-                    f"{idx} Adding Memories for {speaker_b}",
+                    "Adding Memories for Speaker B",
                 ),
             )
 

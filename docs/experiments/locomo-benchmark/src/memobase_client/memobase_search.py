@@ -54,7 +54,6 @@ class MemobaseSearch:
                     max_token_size=self.max_memory_context_size,
                     chats=[{"role": "user", "content": query}],
                     event_similarity_threshold=0.2,
-                    fill_window_with_events=True,
                 )
                 break
             except ServerError as e:
@@ -86,10 +85,25 @@ class MemobaseSearch:
             speaker_2_memories=speaker_2_memories,
             question=question,
         )
+        
+        # Save prompt data to JSON file
+        os.makedirs("memobase_profiles", exist_ok=True)
+        prompt_data = {
+            "speaker_1_user_id": speaker_1_user_id.split("_")[0],
+            "speaker_2_user_id": speaker_2_user_id.split("_")[0], 
+            "speaker_1_memories": speaker_1_memories,
+            "speaker_2_memories": speaker_2_memories,
+            "question": question,
+            "rendered_prompt": answer_prompt
+        }
+        
+        filename = f"memobase_profiles/prompt_{speaker_1_user_id}_{speaker_2_user_id}.json"
+        with open(filename, "w") as f:
+            json.dump(prompt_data, f, indent=2)
 
         t1 = time.time()
         response = self.openai_client.chat.completions.create(
-            model=os.getenv("MODEL", "gpt-4o"),
+            model=os.getenv("MODEL", "gpt-4.1-mini"),
             messages=[{"role": "system", "content": answer_prompt}],
             temperature=0.0,
         )

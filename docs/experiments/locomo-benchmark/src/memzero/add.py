@@ -6,6 +6,7 @@ import threading
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
+import pprint
 
 load_dotenv()
 
@@ -149,6 +150,12 @@ class MemoryADD:
             thread_a.join()
             thread_b.join()
 
+        # Save memories for both users to json files
+        os.makedirs("mem0_profiles", exist_ok=True)
+        with open(f"mem0_profiles/memories_{speaker_a}_{speaker_a_user_id}.json", "w") as f:
+            json.dump(self.mem0_client.get_all(user_id=speaker_a_user_id), f, indent=2)
+        with open(f"mem0_profiles/memories_{speaker_b}_{speaker_b_user_id}.json", "w") as f:
+            json.dump(self.mem0_client.get_all(user_id=speaker_b_user_id), f, indent=2)
         print("Messages added successfully")
 
     def process_all_conversations(self, max_workers=10):
